@@ -2,7 +2,10 @@
 
 Available on [![Hunyuan3D-Studio](https://img.shields.io/badge/Hunyuan3D-Studio-yellow)](https://3d.hunyuan.tencent.com/studio) [![Hunyuan3D](https://img.shields.io/badge/Hunyuan-3D-blue)](https://3d.hunyuan.tencent.com)  
 
-Pipeline of our image to 3D part generation. It contains two key components, P3-SAM and X-Part. The holistic mesh is fed to part detection module P3-SAM to obtain the semantic features, part segmentations and part bounding boxes. Then X-Part generate the complete parts.  
+
+<video src="P3-SAM/images/hunyuan-part.mp4" controls width="800"></video>
+
+Our 3D part generation pipeline contains two key components, P3-SAM and X-Part. The holistic mesh is fed to part detection module P3-SAM to obtain the semantic features, part segmentations and part bounding boxes. Then X-Part generate the complete parts.  
 <img src="P3-SAM/images/HYpart-fullpip.jpg" alt="drawing" width="800"/>
 
 ###  P3-SAM： Native 3D part Segmentation.   
@@ -20,7 +23,7 @@ Pipeline of our image to 3D part generation. It contains two key components, P3-
 
 ###  X-Part： high-fidelity and structure-coherent shape decomposition  
 
-<video src="https://yanxinhao.github.io/Projects/X-Part/assets/videos/xpart-homepage.mp4" controls width="800"></video>
+
 
 - Paper: [https://arxiv.org/abs/2509.08643](https://arxiv.org/abs/2509.08643).  
 - Code: [https://github.com/Tencent-Hunyuan/Hunyuan3D-Part/tree/main/XPart](XPart/).
