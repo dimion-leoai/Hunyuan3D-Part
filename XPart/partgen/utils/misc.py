@@ -194,11 +194,11 @@ def init_from_ckpt(model, ckpt, prefix="model", ignore_keys=()):
             if ik in k:
                 print("Deleting key {} from state_dict.".format(k))
                 del state_dict[k]
-    state_dict = {
-        k.replace(prefix + ".", ""): v
-        for k, v in state_dict.items()
-        if k.startswith(prefix)
-    }
+    # state_dict = {
+    #     k.replace(prefix + ".", ""): v
+    #     for k, v in state_dict.items()
+    #     if k.startswith(prefix)
+    # }
     missing, unexpected = model.load_state_dict(state_dict, strict=False)
     print(f"Restored with {len(missing)} missing and {len(unexpected)} unexpected keys")
     if len(missing) > 0:
