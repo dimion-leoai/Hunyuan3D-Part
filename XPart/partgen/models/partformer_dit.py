@@ -571,6 +571,8 @@ class FinalLayer(nn.Module):
 
 class PartFormerDITPlain(nn.Module):
 
+    _supports_gradient_checkpointing = True
+
     def __init__(
         self,
         input_size=1024,
@@ -605,6 +607,8 @@ class PartFormerDITPlain(nn.Module):
         self.in_channels = in_channels
         self.out_channels = in_channels
         self.num_heads = num_heads
+        self.cross_attention_dim = encoder_hidden_dim
+        self.cross_attention_dim_2 = encoder_hidden2_dim
 
         self.hidden_size = hidden_size
         self.norm = nn.LayerNorm if norm_type == "layer" else nn.RMSNorm
@@ -680,7 +684,17 @@ class PartFormerDITPlain(nn.Module):
 
         self.final_layer = FinalLayer(hidden_size, self.out_channels)
 
-    def forward(self, x, t, contexts: dict, **kwargs):
+        self.gradient_checkpointing = False
+
+    def enable_gradient_checkpointing(self):
+        """Enable gradient checkpointing for this model."""
+        self.gradient_checkpointing = True
+
+    def disable_gradient_checkpointing(self):
+        """Disable gradient checkpointing for this model."""
+        self.gradient_checkpointing = False
+
+    def forward(self, x, t, cond, **kwargs):
         """
 
         x: [B, N, C]
@@ -695,12 +709,16 @@ class PartFormerDITPlain(nn.Module):
 
         For parts pretrain : K = 1
         """
+        import torch
         #  prepare input
         aabb: torch.Tensor = kwargs.get("aabb", None)
         # image_context = contexts.get("image_un_cond", None)
-        object_context = contexts.get("obj_cond", None)
-        geo_context = contexts.get("geo_cond", None)
-        num_tokens: torch.Tensor = kwargs.get("num_tokens", None)
+        # object_context = contexts.get("obj_cond", None)
+        # geo_context = contexts.get("geo_cond", None)
+        # num_tokens: torch.Tensor = kwargs.get("num_tokens", None)
+        object_context = cond
+        geo_context = kwargs.get("encoder_hidden_states_2", None)
+        num_parts = kwargs.get("num_parts", None)
         # timeembedding and input projection
         t = self.t_embedder(t, condition=kwargs.get("guidance_cond"))
         x = self.x_embedder(x)
@@ -730,7 +748,7 @@ class PartFormerDITPlain(nn.Module):
             x = x + bbox_embeds
         # part id embedding
         if self.use_part_embed:
-            num_parts = aabb.shape[1]
+            num_parts = x.shape[0]
             random_idx = torch.randperm(self.valid_num)[:num_parts]
             part_embeds = self.part_embed[random_idx].unsqueeze(1)
             # import pdb
@@ -741,14 +759,28 @@ class PartFormerDITPlain(nn.Module):
         skip_value_list = []
         for layer, block in enumerate(self.blocks):
             skip_value = None if layer <= self.depth // 2 else skip_value_list.pop()
-            x = block(
-                hidden_states=x,
-                # encoder_hidden_states=image_context,
-                encoder_hidden_states=object_context,
-                encoder_hidden_states_2=geo_context,
-                temb=c,
-                skip_value=skip_value,
-            )
+
+            if self.training and self.gradient_checkpointing:
+                import torch.utils.checkpoint
+                x = torch.utils.checkpoint.checkpoint(
+                    block,
+                    x,
+                    object_context,
+                    geo_context,
+                    c,
+                    skip_value,
+                    use_reentrant=False
+                )
+            else:
+                x = block(
+                    hidden_states=x,
+                    # encoder_hidden_states=image_context,
+                    encoder_hidden_states=object_context,
+                    encoder_hidden_states_2=geo_context,
+                    temb=c,
+                    skip_value=skip_value,
+                )
+
             if layer < self.depth // 2:
                 skip_value_list.append(x)
 
