@@ -717,7 +717,7 @@ class PartFormerDITPlain(nn.Module):
         # geo_context = contexts.get("geo_cond", None)
         # num_tokens: torch.Tensor = kwargs.get("num_tokens", None)
         object_context = cond
-        geo_context = kwargs.get("encoder_hidden_states_2", None)
+        geo_context = kwargs.get("encoder_hidden_states2", None)
         num_parts = kwargs.get("num_parts", None)
         # timeembedding and input projection
         t = self.t_embedder(t, condition=kwargs.get("guidance_cond"))
