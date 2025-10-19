@@ -463,4 +463,4 @@ class VolumeDecoderShapeVAE(VectsetVAE):
         return outputs
 
     def set_flash_decoder(self):
-        pass
+        return
