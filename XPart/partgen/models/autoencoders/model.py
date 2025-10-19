@@ -325,7 +325,18 @@ class VolumeDecoderShapeVAE(VectsetVAE):
         latents = self.transformer(latents)
         return latents
 
+    def get_posterior_for_surface(self, surface):
+        if surface.shape[-1] == 6:
+            surface = torch.cat([surface, torch.zeros_like(surface[..., :1])], dim=-1)
+        pc, feats = surface[:, :, :3], surface[:, :, 3:]
+        latents, _ = self.encoder(pc, feats)
+        moments = self.pre_kl(latents)
+        posterior = DiagonalGaussianDistribution(moments, feat_dim=-1)
+        return posterior
+
     def encode(self, surface, sample_posterior=True, return_pc_info=False):
+        if surface.shape[-1] == 6:
+            surface = torch.cat([surface,])
         pc, feats = surface[:, :, :3], surface[:, :, 3:]
         latents, pc_infos = self.encoder(pc, feats)
         # print(latents.shape, self.pre_kl.weight.shape)
@@ -450,3 +461,6 @@ class VolumeDecoderShapeVAE(VectsetVAE):
             out.mesh_f = mesh_f
             outputs.append(out)
         return outputs
+
+    def set_flash_decoder(self):
+        pass
