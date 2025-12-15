@@ -137,6 +137,27 @@ class DiagonalGaussianDistribution(object):
 
 
 class VectsetVAE(nn.Module):
+    @property
+    def device(self):
+        """Mimic diffusers' ModelMixin device property for compatibility."""
+        first_param = next(self.parameters(), None)
+        if first_param is not None:
+            return first_param.device
+        first_buffer = next(self.buffers(), None)
+        if first_buffer is not None:
+            return first_buffer.device
+        return torch.device("cpu")
+
+    @property
+    def dtype(self):
+        """Expose dtype attribute expected by diffusers' pipeline utilities."""
+        first_param = next(self.parameters(), None)
+        if first_param is not None:
+            return first_param.dtype
+        first_buffer = next(self.buffers(), None)
+        if first_buffer is not None:
+            return first_buffer.dtype
+        return torch.float32
 
     @classmethod
     @synchronize_timer("VectsetVAE Model Loading")
